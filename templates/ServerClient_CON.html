@@ -1,0 +1,39 @@
+{% extends 'layout.html' %}
+{% block content %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    var iplistjson = JSON.parse('{{iplistjson|tojson}}');
+    console.log(iplistjson);
+    console.log(iplistjson.server);
+    var server = iplistjson.server;
+    var client = iplistjson.client;
+    google.charts.load('current', {'packages':['table']});
+    google.charts.setOnLoadCallback(drawTable);
+    
+    function drawTable(){
+        var data = new google.visualization.DataTable();
+        data.addColumn('string','Server/Client');
+        data.addColumn('string','IP');
+        data.addRows([["Server",server]]);
+        for (var i=0;i<client.length;i++){
+            data.addRows([
+                ["Client"+"_"+i,client[i]]
+                ]);
+        }
+        var table = new google.visualization.Table(document.getElementById('table_div'));
+        var options={showRowNumber:true,allowHtml:true, width:'100%', height:'150px'};
+        table.draw(data, options);
+    }
+
+
+</script>
+<div id="table_div"></div>
+<div id="intro" class="p-5 text-center bg-light">
+    <h1 class="mb-3 h2">작동법 선택</h1>
+    <a class="btn btn-primary m-2" href="/Manual" role="button">개별수동작업</a>
+    <a class="btn btn-primary m-2" href="/Program" role="button">프로그램작동</a>
+    <a class="btn btn-primary m-2" href="/Macro" role="button">매크로(기억작동)</a>
+</div>
+
+
+{% endblock %}	

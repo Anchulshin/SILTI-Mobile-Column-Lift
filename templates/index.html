@@ -1,24 +1,66 @@
 {% extends 'layout.html' %}
- 
+
+
+
+
 {% block content %}
+
+
+<script type="text/javascript">
+
+	function cli_(val){
+		var PW = document.getElementById('PW');
+		var pre = PW.value;
+		if(val=='del'){
+			pre=pre.slice(0,-1);
+			PW.value=pre;
+		}
+		else if(val=='all'){
+			pre="";
+			PW.value=pre;
+		}
+		else if(val==''){
+
+			alert(PW.value);
+		}
+		else{
+			PW.value = pre+val;
+		}
+	}
+	
+</script>
+
 <div>
-  <div>
-    <article>
-      <h1>첫 번째 포스트 제목</h1>
-      <p>첫 번째 포스트 내용입니다.</p>
-      <div>
-        <p>작성자</p>
-        <p>2018-08-01</p>
-      </div>
-    </article>
-    <article>
-      <h1>두 번째 포스트 제목</h1>
-      <p>두 번째 포스트 내용입니다.</p>
-      <div>
-        <p>작성자</p>
-        <p>2018-08-01</p>
-      </div>
-    </article>
-  </div>
+    <table style="width:100%">
+        <tr>
+            <td style="width:14%"><input type="button" style="width:95%" value="1" onclick="cli_('1');"/></td>
+            <td style="width:14%"><input type="button" style="width:95%" value="2" onclick="cli_('2');"/></td>
+            <td style="width:14%"><input type="button" style="width:95%" value="3" onclick="cli_('3');"/></td>
+            <td style="width:14%"><input type="button" style="width:95%" value="4" onclick="cli_('4');"/></td>
+            <td style="width:14%"><input type="button" style="width:95%" value="5" onclick="cli_('5');"/></td>
+            <td style="width:16%"><input type="button" style="width:95%" value="한칸지움" onclick="cli_('del');;"/></td>
+        </tr>
+        <tr>
+            <td><input type="button" style="width:95%" value="6" onclick="cli_('6');"/></td>
+            <td><input type="button" style="width:95%" value="7" onclick="cli_('7');"/></td>
+            <td><input type="button" style="width:95%" value="8" onclick="cli_('8');"/></td>
+            <td><input type="button" style="width:95%" value="9" onclick="cli_('9');"/></td>
+            <td><input type="button" style="width:95%" value="0" onclick="cli_('0');"/></td>
+            <td><input type="button" style="width:95%" value="전체지움" onclick="cli_('all');"/></td>
+
+        </tr>
+    </table>
+
+    <form action="http://192.168.0.132:9999/" method="POST">
+        <table>
+            <tr>
+                <td>비밀번호</td>
+                <td><input type="password" name="PW" id="PW"/></td>
+                <td><input type="submit" value="확인"/></td>
+            </tr>
+        </table>
+    </form>
+    <div id="table_div"></div>
 </div>
 {% endblock %}
+

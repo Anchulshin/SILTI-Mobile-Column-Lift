@@ -1,0 +1,97 @@
+{% extends 'layout.html' %}
+{% block content %}
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+	
+	google.charts.load('current', {'packages':['table', 'controls']});
+	google.charts.setOnLoadCallback(drawTable);
+
+	var serverclient=[];
+	serverclient.unshift('{{myip}}');
+
+	function drawTable() {
+		var jsondata = JSON.parse('{{data|safe}}');
+		var data = new google.visualization.DataTable();
+		data.addColumn('string','Ip');
+		data.addColumn('string','NetBiosName');
+		data.addColumn('string','MacAddress');
+		
+		for (key in jsondata){
+			data.addRows([
+				[key,jsondata[key]['NetBiosName'],jsondata[key]['MACAddress']]
+			]);
+		}
+		var table = new google.visualization.Table(document.getElementById('table_div'));
+		table.draw(data, {showRowNumber: true, width: '100%', height: '200px'});
+		google.visualization.events.addListener(table, 'select', selectHandler);
+		
+		var clientdata = new google.visualization.DataTable();
+		clientdata.addColumn('string','Ip');
+		clientdata.addColumn('string','NetBiosName');
+		var SC = document.getElementById('serverclient');
+		
+			
+		function selectHandler(){
+			var selection = table.getSelection();
+			var rowvalue = selection[0].row;
+			var ip = data.getValue(rowvalue,0);
+			var NetBiosName = data.getValue(rowvalue,1);
+			clientdata.addRows([
+					[ip, NetBiosName]
+				]);
+			var table2 = new google.visualization.Table(document.getElementById('client_div'));
+			table2.draw(clientdata, {showRowNumber: true, width: '100%', height: '150px'});
+			serverclient.push(ip);
+			SC.value=serverclient;
+			
+			google.visualization.events.addListener(table2, 'select', removeHandler);
+			
+			
+			function removeHandler(){
+				
+				var selection = table2.getSelection();
+				var rowvalue = selection[0].row;
+				
+				var ip = clientdata.getValue(rowvalue,0);
+				
+				clientdata.removeRow(rowvalue);
+				table2.draw(clientdata, {showRowNumber: true, width: '100%', height: '150px'});
+				serverclient.pop(ip);
+				SC.value=serverclient;
+			}
+		}
+	}	
+	</script>
+
+		
+		<form action="http://192.168.0.132:9999/ServerClient" method="POST">
+			<table>
+				<tr>
+					<td>APIP</td>
+					<td><input type="text" name="APIP"/></td>
+					<td><input type="submit" value="확인"/></td>
+				</tr>
+			</table>
+		</form>
+
+		<div id="table_div"></div>
+		<br>
+		
+		<table style="width:100%">
+			<thead>
+				<th style="width:50%"><h4>서버IP</h4></th>
+				<th style="width:50%"><h4>클라이언트IP</h4></th>
+			</thead>
+            <tr>
+                <td style="width:50%">{{myip}}</td>
+				<td style="width:50%"><div id="client_div"></div></td>
+            </tr>
+		</table>
+        <div align="right" style="width:100%">
+            <form action="http://192.168.0.132:9999/ServerClient_CON" method="POST">
+                <input type="text"  style = "display:none;" name="serverclient" id="serverclient"/>
+                <input type="submit" value="Server-Client지정완료"/>
+            </form>
+        </div>
+		
+{% endblock %}	
