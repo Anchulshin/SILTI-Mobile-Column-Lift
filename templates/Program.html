@@ -1,0 +1,267 @@
+{% extends 'layout2.html' %}
+{% block methods %} 프로그램만들기 {% endblock %}
+{% block submethods %} 프로그램을 만들고 편집, 시간단위 {% endblock %}
+{% block content %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    var iplistjson = JSON.parse('{{iplistjson|tojson}}');
+    console.log(iplistjson);
+    console.log(iplistjson.server);
+    var server = iplistjson.server;
+    var client = iplistjson.client;
+
+
+    
+    google.charts.load('current', {'packages':['table', 'line','controls']});
+    google.charts.setOnLoadCallback(drawTable);
+    
+    function drawTable(){
+        //var rawjson = JSON.parse('{{jsonfile|tojson}}');
+        //alert(JSON.stringify(rawjson));
+		var data = new google.visualization.DataTable();
+		data.addColumn('string','Server/Client');
+		data.addColumn('string','IP');
+		data.addColumn('string','회전방향');
+        data.addColumn('string','높이(0-1500mm)');
+        data.addColumn('string','각도(0-360도)');
+        data.addColumn('string','도달후유지시간(sec)');
+		data.addRows([["Server","<input type='text' id='ip0' value='"+ server+"' style='width:100%' class='ips' readonly />","<input type='checkbox'/>","<input type='number' min='0' max='1500' style='width:100%' id='height0'/>","<input type='number'  style='width:100%' min='0' max='360'  id='angle0'/>","<input type='number' id='stime0'  style='width:100%' onchange='synctime(this.value);'/>"]]);
+		for (var i=0;i<client.length;i++){
+            var k=i+1;
+			data.addRows([
+				["Client"+"_"+i,"<input type='text' id='ip"+k+"' value='"+ client[i]+"' style='width:100%' class='ips' readonly />","<input type='checkbox'/>","<input type='number'  min='0' max='1500' id='height"+k+"' style='width:100%' />","<input type='number' id='angle"+k+"' min='0' max='360' style='width:100%'/>","<input type='number' id='stime"+k+"' style='width:100%'  readonly/>"]
+				]);
+		}
+		var table = new google.visualization.Table(document.getElementById('table_div'));
+		var options={showRowNumber:true,allowHtml:true, width:'100%', height:'150px'};
+		table.draw(data, options);
+		
+		var filesall = JSON.parse('{{directory_filelist|tojson}}');
+		//alert(JSON.stringify(filesall));
+		
+		var filedata = new google.visualization.DataTable();
+		filedata.addColumn('string','시나리오파일');
+		filedata.addColumn('datetime','마지막액세스시각');
+		filedata.addColumn('datetime','만든시각');
+		
+		
+		for (key in filesall){
+			console.log(key);
+			console.log(filesall[key]);
+			filedata.addRows([
+				[key,new Date(filesall[key][0]),new Date(filesall[key][1])]
+			]);
+		}
+		var monthYearFormatter = new google.visualization.DateFormat({
+			pattern: "yyyy-MM-dd HH:mm"
+		});
+		monthYearFormatter.format(filedata, 1);
+		monthYearFormatter.format(filedata, 2);
+		var options_file={showRowNumber:true,allowHtml:true, width:'100%', height:'150px'};
+		var filetable = new google.visualization.Table(document.getElementById('filelist'));
+		filetable.draw(filedata,options_file);
+		google.visualization.events.addListener(filetable, 'select', selectHandler);
+		
+			
+		function selectHandler(){
+			var selection = filetable.getSelection();
+			var rowvalue = selection[0].row;
+			var filename = filedata.getValue(rowvalue,0);
+			//alert(filename);
+			//var URL = 'http://192.168.0.129:9999/filedata'
+			var URL = 'http://192.168.0.132:9999/Program2';
+			var xhr = new XMLHttpRequest();
+			//sender = JSON.stringify([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+			sender = filename;
+            xhr.onreadystatechange = function() {
+                //console.log("hi");
+                if (this.readyState == 4 && this.status == 200) {
+                  //document.getElementById("demo").innerHTML = this.responseText;
+                  //alert(this.responseText);
+                  dp_program(JSON.parse(this.responseText));
+                  
+                }
+              };
+			xhr.open('POST', URL, true);
+
+            xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+			xhr.send("read_filename="+sender);
+            
+            
+            //xhr.addEventListener('load',callbackdata);
+            //var rawjson = JSON.parse('{{jsonfile|tojson}}');
+            //alert(JSON.stringify(rawjson));
+		}
+	}
+	
+	function synctime(datavalue){
+		var cnt = document.getElementsByClassName('ips').length;
+		for (var i=0; i<cnt; i++){
+			document.getElementById('stime'+i).value=datavalue;
+		}
+	}
+
+    var program=0;
+	var programlist={};
+	
+	
+	
+	function scenario(){
+		program =program + 1;
+		programlist[program]={};
+		
+		var cnt = document.getElementsByClassName('ips').length;
+		for (i=0; i<cnt;i++){
+			var ip=document.getElementById('ip'+i).value;
+
+			//json식
+			programlist[program][ip]={};
+			var t_height = document.getElementById('height'+i).value;
+			var t_angle = document.getElementById('angle'+i).value;
+			var t_stime = document.getElementById('stime'+i).value;
+			programlist[program][ip].height=t_height;
+			programlist[program][ip].angle=t_angle;
+			programlist[program][ip].time=t_stime;
+		}
+		/* Programlist작성법
+		{
+			  "1": {
+					"192.168.0.129": {
+						  "height": "50",
+						  "angle": "30",
+						  "time" : "10"
+					},
+					"192.168.0.104": {
+						  "height": "20",
+						  "angle": "20",
+						  "time" : "10"
+					},
+					"192.168.0.154": {
+						  "height": "40",
+						  "angle": "30",
+						  "time" : "10"
+					}
+			  }
+		}
+		*/
+		console.log(JSON.stringify(programlist));
+		dp_program(programlist);
+	}
+    
+    function dp_program(programlist){
+		//alert(Object.keys(programlist).length);
+		var data = new google.visualization.DataTable();
+		data.addColumn("string","명령어순서");
+		var cnt = document.getElementsByClassName('ips').length;
+		for(var i=0;i<cnt;i++){
+			var ip=document.getElementById('ip'+i).value;
+			data.addColumn("number",ip+"_H");
+		}
+		
+		var keys = Object.keys(programlist);
+		//높이
+		for (var i=0; i<keys.length;i++){
+			var key = keys[i];
+			var t_ips_keys = Object.keys(programlist[key]);
+			var eachheight=[];
+			eachheight.push(key);
+			for (var j=0;j<t_ips_keys.length;j++){
+				var t_ips_key = t_ips_keys[j];
+				console.log(t_ips_key);
+				eachheight.push(parseInt(programlist[key][t_ips_key]['height']));
+			}
+			console.log(eachheight);
+			
+			data.addRows([eachheight]);
+		}
+		
+		var options = {
+			chart: {
+				title: '순서-높이',
+			},
+			width: '100%',
+			height: 200
+		};
+		var chart = new google.charts.Line(document.getElementById('heightchart'));
+		chart.draw(data, google.charts.Line.convertOptions(options));
+		
+		
+		//각도
+		var data_a = new google.visualization.DataTable();
+		data_a.addColumn("string","명령어순서");
+		var cnt_a = document.getElementsByClassName('ips').length;
+		for(var i=0;i<cnt_a;i++){
+			var ip=document.getElementById('ip'+i).value;
+			data_a.addColumn("number",ip+"_A");
+		}
+		for (var i=0; i<keys.length;i++){
+			var key = keys[i];
+			var t_ips_keys = Object.keys(programlist[key]);
+			var each_angle=[];
+			each_angle.push(key);
+			for (var j=0;j<t_ips_keys.length;j++){
+				var t_ips_key = t_ips_keys[j];
+				console.log(t_ips_key);
+				each_angle.push(parseInt(programlist[key][t_ips_key]['angle']));
+			}
+			console.log(each_angle);
+			
+			data_a.addRows([each_angle]);
+		}
+		
+		var options_a = {
+			chart: {
+				title: '순서-각도',
+			},
+			width: '100%',
+			height: 200
+		};
+		var chart_a = new google.charts.Line(document.getElementById('anglechart'));
+		chart_a.draw(data_a, google.charts.Line.convertOptions(options_a));
+		
+		var scenarioraw = document.getElementById('scenarioraw');
+		scenarioraw.innerHTML=JSON.stringify(programlist, null, 6).replace(/\n( *)/g, function (match, p1) {
+			return '<br>' + '&nbsp;'.repeat(p1.length);
+			});
+		var raw = document.getElementById('raw');
+		raw.value=JSON.stringify(programlist);
+		
+	}
+
+</script>
+<hr>
+<div id="table_div"></div>
+<div align="right" style="width:100%"><input type="button" value="작업등록" onclick="scenario();"/></div>
+<hr>
+
+<!--<table id="pro" style="width:100%;border-collapse:collapse;border:1px black solid;">
+</table> -->
+
+
+<div>
+    <table style="width:100%">
+        <tr>
+            <td style="width:50%">
+                <div id='heightchart' style="width:100%;height:200px;"><p>높이변화</p></div>
+            </td>
+            <td>
+                <div id='anglechart' style="width:100%;height:200px;"><p>각도변화</p></div>
+            </td>
+        </tr>
+    </table>
+</div>
+<h5>프로그램RAW(JSON파일)</h5>
+
+<form action="http://192.168.0.132:9999/Program" method="POST">
+    <div id='scenarioraw' style="width:100%;height:200px;border:1px solid black;overflow:scroll;"></div>
+    <div align="right" style="width:100%">
+        <input type="text" id="raw" name="raw" style="display:none;"/>
+        <input type="text" id="filename" placeholder="아래 프로그램명과 다르게" name="filename"/>
+        <input type="submit" value="파일로저장"/>
+    </div>
+</form>
+<h5>프로그램파일리스트</h5>
+<div id="filelist" style="width:100%;height:150px;border:1px solid black;"></div>
+<h5></h5>
+</body>
+{% endblock %}	

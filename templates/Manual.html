@@ -1,0 +1,84 @@
+{% extends 'layout2.html' %}
+{% block methods %} 수동사용 {% endblock %}
+{% block submethods %} 동시처리:동기화하여 사용, 회전방향지정이 체크일시 반대방향 {% endblock %}
+{% block content %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    var iplistjson = JSON.parse('{{iplistjson|tojson}}');
+    console.log(iplistjson);
+    console.log(iplistjson.server);
+    var server = iplistjson.server;
+    var client = iplistjson.client;
+    google.charts.load('current', {'packages':['table']});
+    google.charts.setOnLoadCallback(drawTable);
+    
+    function drawTable(){
+        var data = new google.visualization.DataTable();
+        data.addColumn('string','Server/Client');
+        data.addColumn('string','IP');
+        data.addColumn('string','동시처리');
+        data.addColumn('string','회전방향지정');
+        data.addRows([["Server",server,"<input type='checkbox' value='sync'/>","<input type='checkbox' value='rev'/>"]]);
+        for (var i=0;i<client.length;i++){
+            data.addRows([
+                ["Client"+"_"+i,client[i],"<input type='checkbox' value='sync'"+i+"/>","<input type='checkbox' value='rev"+i+"'/>"]
+                ]);
+        }
+        var table = new google.visualization.Table(document.getElementById('table_div'));
+        var options={
+            showRowNumber:true,
+            allowHtml:true, 
+            width:'100%', 
+            height:'150px'
+        };
+        table.draw(data, options);
+    }
+
+
+</script>
+<hr>
+<div id="table_div"></div>
+<hr>
+<input type="text" style="width:100%" placeholder="동시처리할 목록"/>
+
+<table style="width:100%;">
+    <tr>
+        <form action="http://192.168.0.132:9999/Manual" method="POST">
+        <td style="width:25%"><h5>상승/하강</h5></td>
+        <td style="width:25%"><input type="submit" style="width:95%;background-color:deeppink;color:white;" value="상대상승" name="liftup"/></td>
+        <td style="width:25%"><input type="submit" style="width:95%" value="상대정지" name="liftstop"/></td>
+        <td style="width:25%"><input type="submit" style="width:95%;background-color:indigo;color:white;" value="상대하강" name="liftdown"/></td>
+        </form>
+    </tr>
+</table>
+    
+</div>
+
+<table style="width:100%;">
+    <tr>
+        <td style="width:25%"><h5>절대높이</h5></td>
+        <td style="width:25%"><input type="text" style="width:95%" placeholder="현위치"/></td>
+        <td style="width:25%"><input type="text" style="width:95%" /></td>
+        <td style="width:25%"><input type="button" style="width:95%" value="작동"/></td>
+    </tr>
+</table>
+
+<table style="width:100%;">
+    <tr>
+        <td style="width:25%"><h5>상대회전</h5></td>
+        <td style="width:25%"><input type="button" style="width:95%;background-color:deeppink;color:white;" value="시계방향"/></td>
+        <td style="width:25%"><input type="button" style="width:95%" value="회전정지"/></td>
+        <td style="width:25%"><input type="button" style="width:95%;background-color:indigo;color:white;" value="반시계방향"/></td>
+    </tr>
+</table>
+
+
+<table style="width:100%;">
+    <tr>
+        <td style="width:25%"><h5>절대회전</h5></td>
+        <td style="width:25%"><input type="text" style="width:95%" placeholder="현각도"/></td>
+        <td style="width:25%"><input type="text" style="width:95%" /></td>
+        <td style="width:25%"><input type="button" style="width:95%" value="작동"/></td>
+    </tr>
+</table>
+{% endblock %}	

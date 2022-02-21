@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+{% block content %}
+<form action="http://192.168.0.132:9999/ServerClient" method="POST">
+  <table>
+    <tr>
+      <td>APIP</td>
+      <td><input type="text" name="APIP"/></td>
+      <td><input type="submit" value="확인"/></td>
+    </tr>
+  </table>
+</form>
+{% endblock %}
