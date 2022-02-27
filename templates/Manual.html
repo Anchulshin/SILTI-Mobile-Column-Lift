@@ -18,10 +18,11 @@
         data.addColumn('string','IP');
         data.addColumn('string','동시처리');
         data.addColumn('string','회전방향지정');
-        data.addRows([["Server",server,"<input type='checkbox' value='sync'/>","<input type='checkbox' value='rev'/>"]]);
+        data.addRows([["Server",server,"<input type='checkbox' class='sync_ip' value='"+server+"' onClick='check_sync();'/>","<input type='checkbox' class='rev_ip' value='"+server+"' onclick='check_cnt();'/>"]]);
         for (var i=0;i<client.length;i++){
+            var k=i+1;
             data.addRows([
-                ["Client"+"_"+i,client[i],"<input type='checkbox' value='sync'"+i+"/>","<input type='checkbox' value='rev"+i+"'/>"]
+                ["Client"+"_"+i,client[i],"<input type='checkbox' class='sync_ip' value='"+client[i]+"'  onClick='check_sync();'/>","<input type='checkbox' class='rev_ip' value='"+client[i]+"' onclick='check_cnt();'/>"]
                 ]);
         }
         var table = new google.visualization.Table(document.getElementById('table_div'));
@@ -33,52 +34,127 @@
         };
         table.draw(data, options);
     }
+    
+    function check_sync(){
+        var totalsync = "";
+        var sync_ip = document.getElementsByClassName('sync_ip');
+        var synclist = document.getElementById("synclist");
+        for (var i=0;i<sync_ip.length;i++){
+            if (sync_ip[i].checked){
+                totalsync = totalsync+sync_ip[i].value+',';
+            }
+        }
+        synclist.value = totalsync;
+    }
+
+    function check_cnt(){
+        var total_cnt = "";
+        var rev_ip = document.getElementsByClassName('rev_ip');
+        var cnt_list = document.getElementById("cnt_list");
+        for (var i=0;i<rev_ip.length;i++){
+            if (rev_ip[i].checked){
+                total_cnt = total_cnt+rev_ip[i].value+',';
+            }
+        }
+        cnt_list.value = total_cnt;
+
+    }
+
+    setInterval(() => {
+        fetch("{{ url_for('height_feed') }}")
+        .then(response => {
+                response.text().then(t => {
+                  var height = document.getElementById("height_real");
+                  height.value = t;
+                  //real_height();
+                  })
+            });
+      }, 1000);
+      
+      
+    setInterval(() => {
+    fetch("{{ url_for('angle_feed') }}")
+    .then(response => {
+            response.text().then(t => {
+                var angle = t.split(",");
+                var X=angle[0].split(":");
+                var Y=angle[1].split(":");
+                var Z=angle[2].split(":");
+
+                var anglex = document.getElementById("angle_realx");
+                anglex.value = X[1];
+                var angley = document.getElementById("angle_realy");
+                angley.value = Y[1];
+                var anglez = document.getElementById("angle_realz");
+                anglez.value = Z[1];
+                //real_tilt();
+                })
+        });
+    }, 1000);  
+
 
 
 </script>
 <hr>
 <div id="table_div"></div>
 <hr>
-<input type="text" style="width:100%" placeholder="동시처리할 목록"/>
-
+<form action="http://192.168.0.132:9999/Manual" method="POST">
+<table style="width:100%">
+    <tr>
+        <td style="width:50%">
+            <input type="text" style="width:100%" placeholder="동시처리할 목록" id="synclist" name="synclist"/>
+        </td>
+        <td style="width:50%">
+            <input type="text" style="width:100%" placeholder="반전목록" id="cnt_list" name="cnt_list"/>
+        </td>
+    </tr>
+</table>
 <table style="width:100%;">
     <tr>
-        <form action="http://192.168.0.132:9999/Manual" method="POST">
-        <td style="width:25%"><h5>상승/하강</h5></td>
+        <td style="width:25%">상승/하강</td>
         <td style="width:25%"><input type="submit" style="width:95%;background-color:deeppink;color:white;" value="상대상승" name="liftup"/></td>
         <td style="width:25%"><input type="submit" style="width:95%" value="상대정지" name="liftstop"/></td>
         <td style="width:25%"><input type="submit" style="width:95%;background-color:indigo;color:white;" value="상대하강" name="liftdown"/></td>
-        </form>
     </tr>
 </table>
     
-</div>
+
 
 <table style="width:100%;">
     <tr>
-        <td style="width:25%"><h5>절대높이</h5></td>
-        <td style="width:25%"><input type="text" style="width:95%" placeholder="현위치"/></td>
-        <td style="width:25%"><input type="text" style="width:95%" /></td>
-        <td style="width:25%"><input type="button" style="width:95%" value="작동"/></td>
+        <td style="width:25%">절대높이</td>
+        <td style="width:25%"><input type="text" style="width:95%" placeholder="현위치" id="height_real" name="height_real"/></td>
+        <td style="width:25%"><input type="text" style="width:95%" name="ab_height" /></td>
+        <td style="width:25%"><input type="submit" style="width:95%" value="작동" name="ab_height_run"/></td>
     </tr>
 </table>
 
 <table style="width:100%;">
     <tr>
-        <td style="width:25%"><h5>상대회전</h5></td>
-        <td style="width:25%"><input type="button" style="width:95%;background-color:deeppink;color:white;" value="시계방향"/></td>
-        <td style="width:25%"><input type="button" style="width:95%" value="회전정지"/></td>
-        <td style="width:25%"><input type="button" style="width:95%;background-color:indigo;color:white;" value="반시계방향"/></td>
+        <td style="width:25%">상대회전</td>
+        <td style="width:25%"><input type="submit" style="width:95%;background-color:deeppink;color:white;" value="시계방향" name="ang_clock"/></td>
+        <td style="width:25%"><input type="submit" style="width:95%" value="회전정지" name="ang_stop"/></td>
+        <td style="width:25%"><input type="submit" style="width:95%;background-color:indigo;color:white;" value="반시계방향" name="ang_cnt_clock"/></td>
     </tr>
 </table>
 
 
 <table style="width:100%;">
     <tr>
-        <td style="width:25%"><h5>절대회전</h5></td>
-        <td style="width:25%"><input type="text" style="width:95%" placeholder="현각도"/></td>
-        <td style="width:25%"><input type="text" style="width:95%" /></td>
-        <td style="width:25%"><input type="button" style="width:95%" value="작동"/></td>
+        <td style="width:25%">절대회전</td>
+        <td style="width:25%">
+            <div>
+                <label style="width:10%">X(R)</label>
+                <input type="text" style="width:20%" placeholder="현각도" id="angle_realx" name="angle_realx"/>
+                <label style="width:10%">Y(P)</label>
+                <input type="text" style="width:20%" placeholder="현각도" id="angle_realy" name="angle_realy"/>
+                <label style="width:10%">Z(Y)</label>
+                <input type="text" style="width:20%" placeholder="현각도" id="angle_realz" name="angle_realz"/>
+            </div>
+        </td>
+        <td style="width:25%"><input type="text" style="width:95%" name="ab_angle" /></td>
+        <td style="width:25%"><input type="submit" style="width:95%" value="작동" name="ab_angle_run"/></td>
     </tr>
 </table>
+</form>
 {% endblock %}	
